@@ -1,0 +1,63 @@
+version: "3"
+services:
+  mysql:
+    #container-name: ${APP_NAME}_${APP_ENV}_mysql
+    image: mysql:5.7
+    volumes:
+      - ./data-mysql:/var/lib/mysql
+    restart: always
+    environment:
+      - MYSQL_ROOT_PASSWORD=root
+  percona:
+    #container-name: ${APP_NAME}_${APP_ENV}_mysql
+    image: percona:5.7
+    volumes:
+      - ./data-percona:/var/lib/mysql
+    restart: always
+    environment:
+      - MYSQL_ROOT_PASSWORD=root
+  webserver:
+    #container-name: ${APP_NAME}_${APP_ENV}_nginx
+    build:
+      context: ./config/webserver
+      dockerfile: webserver.dockerfile
+    depends_on:
+      - mysql
+      - redis
+    ports:
+      - "50001:80"
+    links:
+      - mysql
+      - percona
+      - redis
+    volumes:
+      - ./data-www:/var/www/html
+      - ./config/webserver/nginx:/etc/nginx/sites-available
+  redis:
+    image: redis:5.0
+  phpmyadmin_mysql:
+    #container-name: ${APP_NAME}_${APP_ENV}_phpmyadmin
+    image: phpmyadmin/phpmyadmin
+    depends_on:
+      - mysql
+    ports:
+      - "50002:80"
+    links:
+      - mysql
+    environment:
+      - PMA_HOST=mysql
+      - PMA_USER=root
+      - PMA_PASSWORD=root
+  phpmyadmin_percona:
+    #container-name: ${APP_NAME}_${APP_ENV}_phpmyadmin
+    image: phpmyadmin/phpmyadmin
+    depends_on:
+      - percona
+    ports:
+      - "50003:80"
+    links:
+      - percona
+    environment:
+      - PMA_HOST=percona
+      - PMA_USER=root
+      - PMA_PASSWORD=root
